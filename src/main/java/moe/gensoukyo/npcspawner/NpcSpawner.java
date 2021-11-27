@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 /**
  * @author SQwatermark
  */
-@Mod.EventBusSubscriber
+@Deprecated
 public class NpcSpawner {
 
     static NpcSpawnerConfig config;

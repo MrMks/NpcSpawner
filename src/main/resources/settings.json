@@ -1,0 +1,6 @@
+{
+  "distance-min": 10,
+  "distance-max": 30,
+  "interval-min": 400,
+  "interval-max": 1000
+}

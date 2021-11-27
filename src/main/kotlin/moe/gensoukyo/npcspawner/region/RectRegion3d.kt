@@ -29,4 +29,13 @@ class RectRegion3d (
     override fun maxY() = y2
     override fun minZ() = z1
     override fun maxZ() = z2
+
+    companion object Provider : RegionProvider<RectRegion3d> {
+        override fun parse(ary: DoubleArray?): RectRegion3d? {
+            if (ary != null && ary.size > 3) {
+                return if (ary.size > 5) RectRegion3d(ary[0], ary[1], ary[2], ary[3], ary[4], ary[5]) else RectRegion3d(ary[0], ary[1], ary[2], ary[3])
+            }
+            return null
+        }
+    }
 }

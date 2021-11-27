@@ -87,4 +87,16 @@ public class AnyRegion2d implements GeometryRegion {
         if (cacheRough == null) cacheRough = new RectRegion3d(x_min, y_min, z_min, x_max, y_max, z_max);
         return cacheRough;
     }
+
+    public static final RegionProvider<AnyRegion2d> Provider = ary -> {
+        if (ary != null && ary.length % 2 == 0 && ary.length >= 8) {
+            int len = ary.length / 2 - 1;
+            double[][] arys = new double[len][];
+            for (int i = 0; i < len; i++) {
+                arys[i] = new double[]{ary[2 + i * 2], ary[3 + i * 2]};
+            }
+            return new AnyRegion2d(ary[0], ary[1], arys);
+        }
+        return null;
+    };
 }

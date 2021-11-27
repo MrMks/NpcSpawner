@@ -3,20 +3,22 @@ package moe.gensoukyo.npcspawner;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import moe.gensoukyo.npcspawner.looper.MainLooper;
-import moe.gensoukyo.npcspawner.looper.ThreadLooper;
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author SQwatermark
  * @author MrMks
  */
+@Deprecated
 public class NpcSpawnerConfig {
 
     private static final ReentrantLock lock = new ReentrantLock();
@@ -40,7 +42,7 @@ public class NpcSpawnerConfig {
         return instance;
     }
 
-    private static void reload() {
+    public static void reload() {
         NpcSpawnerConfig cfg = new NpcSpawnerConfig();
         lock.lock();
         try {
@@ -48,13 +50,6 @@ public class NpcSpawnerConfig {
         } finally {
             lock.unlock();
         }
-    }
-
-    public static void reload(Runnable callback) {
-        ThreadLooper.getLooper().add(()->{
-            reload();
-            MainLooper.START.add(callback);
-        });
     }
 
     //最小刷怪距离

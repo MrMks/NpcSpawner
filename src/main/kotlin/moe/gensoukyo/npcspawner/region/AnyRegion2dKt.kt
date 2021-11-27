@@ -62,4 +62,15 @@ class AnyRegion2dKt(y_min : Double, y_max : Double, private val posArray : Array
 
     override fun asRough(): RectRegion3d =
         cacheRough ?: RectRegion3d(lmtX[0], lmtX[1], lmtZ[0], lmtZ[1], lmtY[0], lmtY[1]).also { cacheRough = it }
+
+    companion object Provider : RegionProvider<AnyRegion2dKt> {
+        override fun parse(ary: DoubleArray?): AnyRegion2dKt? {
+            if (ary!!.size % 2 == 0 && ary.size >= 8) {
+                val len = ary.size / 2 - 1
+                val args = Array(len) { doubleArrayOf(ary[2 + it * 2], ary[3 + it * 2]) }
+                return AnyRegion2dKt(ary[0], ary[1], args)
+            }
+            return null
+        }
+    }
 }

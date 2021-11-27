@@ -5,6 +5,7 @@ import java.util.ArrayList;
 /**
  * @author SQwatermark
  */
+@Deprecated
 public class NpcRegion {
 
     public String name;

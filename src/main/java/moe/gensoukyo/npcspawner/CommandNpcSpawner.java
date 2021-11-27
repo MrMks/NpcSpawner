@@ -9,13 +9,20 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * @author SQwatermark
  */
 public class CommandNpcSpawner extends CommandBase {
+
+    private final SpawnerConfig config;
+    private final SpawnerStatus.WritePort status;
+    public CommandNpcSpawner(SpawnerConfig config, SpawnerStatus.WritePort status) {
+        this.config = config;
+        this.status = status;
+    }
 
     @NotNull
     @Override
@@ -47,82 +54,71 @@ public class CommandNpcSpawner extends CommandBase {
             Logger logger = ModMain.logger;
             if ("reload".equalsIgnoreCase(args[0])) {
                 sender.sendMessage(new TextComponentString(playerStr("刷新配置中...")));
-                WeakReference<ICommandSender> senderRef = new WeakReference<>(sender);
+                config.reload();
                 String senderName = sender.getName();
-                NpcSpawnerConfig.reload(()->{
-                    if (!isServer) ModMain.logger.info("[@" + senderName + "]配置刷新");
-                    ICommandSender weakSender = senderRef.get();
-                    if (weakSender != null) {
-                        weakSender.sendMessage(new TextComponentString(playerStr("配置刷新完成")));
-                    }
-                });
+                if (!isServer) ModMain.logger.info("[@" + senderName + "]配置刷新");
+                sender.sendMessage(new TextComponentString(playerStr("配置刷新完成")));
             } else if ("pause".equalsIgnoreCase(args[0])) {
-                boolean last = ModMain.pauseSpawn;
+                boolean changed = false;
                 if (args.length > 1) {
                     String s = args[1];
-                    ModMain.pauseSpawn = s.equalsIgnoreCase("true") || s.equals("1");
+                    if (s.equalsIgnoreCase("true") || s.equals("1")) changed = status.enablePause();
+                    else changed = status.disablePause();
                 }
-                String msg = "现在的刷怪器状态: " + (ModMain.pauseSpawn ? "§c暂停" : "§a运行");
+                String msg = "现在的刷怪器状态: " + (status.isPause() ? "§c暂停" : "§a运行");
                 sender.sendMessage(new TextComponentString(playerStr(msg)));
-                if (last != ModMain.pauseSpawn && !isServer) logger.info(consoleStr(msg, sender));
+                if (changed && !isServer) logger.info(consoleStr(msg, sender));
             } else if ("debug".equalsIgnoreCase(args[0])) {
-                boolean last = ModMain.debugSpawn;
+                boolean changed = false;
                 if (args.length > 1) {
                     String s = args[1];
-                    ModMain.debugSpawn = s.equalsIgnoreCase("true") || s.equals("1");
+                    if (s.equalsIgnoreCase("true") || s.equals("1")) changed = status.enableDebug();
+                    else changed = status.disableDebug();
                 }
-                String msg = "现在的调试状态: " + (ModMain.debugSpawn ? "§c开" : "§a关");
+                String msg = "现在的调试状态: " + (status.isDebug() ? "§c开" : "§a关");
                 sender.sendMessage(new TextComponentString(playerStr(msg)));
-                if (last != ModMain.debugSpawn && !isServer) logger.info(consoleStr(msg, sender));
+                if (changed && !isServer) logger.info(consoleStr(msg, sender));
             } else if ("blacklist".equalsIgnoreCase(args[0])) {
                 if (args.length > 1) {
                     if ("on".equalsIgnoreCase(args[1])) {
-                        boolean last = NpcSpawner.enableBlkList;
-                        NpcSpawner.enableBlkList = true;
                         String msg = "刷怪世界黑名单: §con";
                         sender.sendMessage(new TextComponentString(playerStr(msg)));
-                        if (!last && !isServer) logger.info(consoleStr(msg,sender));
+                        if (status.enableBlacklist() && !isServer) logger.info(consoleStr(msg,sender));
                     } else if ("off".equalsIgnoreCase(args[1])) {
-                        boolean last = NpcSpawner.enableBlkList;
-                        NpcSpawner.enableBlkList = false;
                         String msg = "刷怪世界黑名单: §aoff";
                         sender.sendMessage(new TextComponentString(playerStr(msg)));
-                        if (last && !isServer) logger.info(consoleStr(msg, sender));
+                        if (status.disableBlacklist() && !isServer) logger.info(consoleStr(msg, sender));
                     } else if ("clr".equalsIgnoreCase(args[1])) {
-                        NpcSpawner.blkList.clear();
                         String msg = "刷怪世界黑名单: 名单已重置";
                         sender.sendMessage(new TextComponentString(playerStr(msg)));
-                        if (!isServer) logger.info(consoleStr(msg, sender));
+                        if (status.clearBlacklist() && !isServer) logger.info(consoleStr(msg, sender));
                     } else if ("ls".equalsIgnoreCase(args[1])) {
-                        if (NpcSpawner.blkList.size() == 0) {
+                        String[] list = status.getBlacklists();
+                        if (list.length == 0) {
                             sender.sendMessage(new TextComponentString("黑名单为空"));
                         } else {
-                            StringBuilder bd = new StringBuilder();
-                            for (String str : NpcSpawner.blkList) bd.append(str).append(", ");
-                            sender.sendMessage(new TextComponentString(bd.substring(0, bd.length() - 2)));
+                            sender.sendMessage(new TextComponentString(Arrays.toString(list)));
                         }
                     } else if ("add".equalsIgnoreCase(args[1])) {
                         if (args.length > 2) {
                             if (args[2] != null) {
-                                boolean f = NpcSpawner.blkList.add(args[2]);
                                 String msg = "刷怪世界黑名单已§a添加: " + args[2];
                                 sender.sendMessage(new TextComponentString(playerStr(msg)));
-                                if (f && !isServer) logger.info(consoleStr(msg, sender));
+                                if (status.addBlacklist(args[2]) && !isServer) logger.info(consoleStr(msg, sender));
                             }
                         }
                     } else if ("rm".equalsIgnoreCase(args[1])) {
                         if (args.length > 2) {
                             if (args[2] != null) {
-                                boolean f = NpcSpawner.blkList.remove(args[2]);
                                 String msg = "刷怪世界黑名单已§c移除: " + args[2];
                                 sender.sendMessage(new TextComponentString(playerStr(msg)));
-                                if (f && !isServer) logger.info(consoleStr(msg, sender));
+                                if (status.removeBlacklist(args[2]) && !isServer) logger.info(consoleStr(msg, sender));
                             }
                         }
                     }
                 }
                 else {
-                    sender.sendMessage(new TextComponentString("刷怪世界黑名单: " + (NpcSpawner.enableBlkList ? "§con" : "§aoff")));
+                    sender.sendMessage(new TextComponentString("刷怪世界黑名单: " + (status.isBlacklist() ? "§con" : "§aoff")));
                 }
             }
         }
@@ -130,7 +126,7 @@ public class CommandNpcSpawner extends CommandBase {
 
     @NotNull
     @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos targetPos) {
+    public List<String> getTabCompletions(@NotNull MinecraftServer server, @NotNull ICommandSender sender, String[] args, @Nullable BlockPos targetPos) {
         if (args.length == 1) {
             return getListOfStringsMatchingLastWord(args, "reload", "pause", "debug", "blacklist");
         } else if (args.length == 2) {
